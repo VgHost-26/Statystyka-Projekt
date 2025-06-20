@@ -7,14 +7,16 @@ MIN_SERVICE_TIME = 5
 MAX_SERVICE_TIME = 15
 FUELS = ["A", "B"]
 FUELS_PROBABILITY = [0.7, 0.3]
-CAR_ARRIVAL_INTERVAL = (1, 3)
+# CAR_ARRIVAL_INTERVAL = (1, 3)
+NORMAL_ARRIVAL_MEAN = 2  # Średni czas przyjazdu samochodu
+NORMAL_ARRIVAL_STD = 0.5  # Odchylenie standardowe
 QUEUE_MAX_SIZE = 12
 DISPENSER_QUEUE_MAX_SIZE = 3
 
 DISPENSERS_CONFIG = [
     {"id": 0, "fuels": {"A"}},
     {"id": 1, "fuels": {"A"}},
-    {"id": 2, "fuels": {"A", "B"}},
+    {"id": 2, "fuels": {"B", "A"}},
     {"id": 3, "fuels": {"B"}},
 ]
 
@@ -24,11 +26,14 @@ config = {
     "max_service_time": MAX_SERVICE_TIME,
     "fuels": FUELS,
     "fuels_probability": FUELS_PROBABILITY,
-    "car_arrival_interval": CAR_ARRIVAL_INTERVAL,
+    # "car_arrival_interval": CAR_ARRIVAL_INTERVAL,
+    "normal_arrival_mean": NORMAL_ARRIVAL_MEAN,
+    "normal_arrival_std": NORMAL_ARRIVAL_STD,
     "queue_max_size": QUEUE_MAX_SIZE,
     "dispenser_queue_max_size": DISPENSER_QUEUE_MAX_SIZE,
     "dispensers_config": DISPENSERS_CONFIG,
 }
+
 
 class Car:
     def __init__(self, id: int, fuel_type: str, service_time: int):
@@ -184,8 +189,13 @@ def run_simulation():
 
     car_gen = car_generator()
 
-    next_car_arrival = current_time + random.randint(*CAR_ARRIVAL_INTERVAL)
-
+    # next_car_arrival = current_time + random.randint(*CAR_ARRIVAL_INTERVAL)
+    
+    # Rozkład normalny dla przyjazdu samochodów
+    next_car_arrival = current_time + max(
+        1,
+        int(random.normalvariate(NORMAL_ARRIVAL_MEAN, NORMAL_ARRIVAL_STD)),
+    )
     # stats ----
     car_counter = 0
     car_serviced_counter = 0
@@ -211,12 +221,16 @@ def run_simulation():
             cars_with_fuel[car.fuel_type] += 1
             queue.append(car)
 
+
+            # Opcjonalnie: jeśli kolejka jest pełna, samochód odjeżdża
             # if len(queue) < QUEUE_MAX_SIZE:
             # queue.append(car)
             # else:
             # print(f"Samochód {car.id} odjechał, kolejka pełna.")
-            next_car_arrival = current_time + random.randint(*CAR_ARRIVAL_INTERVAL)
-
+            # next_car_arrival = current_time + random.randint(*CAR_ARRIVAL_INTERVAL)
+            
+            next_interval = max(1, int(random.normalvariate(NORMAL_ARRIVAL_MEAN, NORMAL_ARRIVAL_STD)))
+            next_car_arrival = current_time + next_interval
         car = queue[0] if queue else None
 
         if car:
@@ -273,7 +287,9 @@ def run_simulation():
     stats["total_cars_serviced"] = car_serviced_counter
     stats["total_cars_generated"] = car_counter
     stats["total_cars_in_main_queue_at_end"] = len(queue)
-    stats["total_cars_in_mini_queues_at_end"] = sum(len(d.dispenser_queue) for d in dispensers)
+    stats["total_cars_in_mini_queues_at_end"] = sum(
+        len(d.dispenser_queue) for d in dispensers
+    )
     stats["cars_serviced_by_dispenser"] = {d.id: d.serviced_cars for d in dispensers}
     stats["total_cars_with_fuel"] = cars_with_fuel
     stats["avg_waiting_time"] = (
@@ -332,9 +348,10 @@ def run_multiple_simulations(n: int):
 def show_config():
     print("Current configuration:")
     for key, value in config.items():
-      print(f"{key}: {value}")
+        print(f"{key}: {value}")
 
-if '__main__' == __name__:
+
+if "__main__" == __name__:
 
     show_config()
     simulation_states, simulation_stats = run_multiple_simulations(100)
