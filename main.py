@@ -13,12 +13,33 @@ NORMAL_ARRIVAL_STD = 0.5  # Odchylenie standardowe
 QUEUE_MAX_SIZE = 12
 DISPENSER_QUEUE_MAX_SIZE = 3
 
-DISPENSERS_CONFIG = [
-    {"id": 0, "fuels": {"A"}},
-    {"id": 1, "fuels": {"A"}},
-    {"id": 2, "fuels": {"B", "A"}},
-    {"id": 3, "fuels": {"B"}},
-]
+# DISPENSERS_CONFIG = [
+#     {"id": 0, "fuels": {"A"}},
+#     {"id": 1, "fuels": {"A"}},
+#     {"id": 2, "fuels": {"B", "A"}},
+#     {"id": 3, "fuels": {"B"}},
+# ]
+
+SCENARIOS = {
+    "all_ab": [
+        {"id": 0, "fuels": {"A", "B"}},
+        {"id": 1, "fuels": {"A", "B"}},
+        {"id": 2, "fuels": {"A", "B"}},
+        {"id": 3, "fuels": {"A", "B"}},
+    ],
+    "two_a_two_b": [
+        {"id": 0, "fuels": {"A"}},
+        {"id": 1, "fuels": {"A"}},
+        {"id": 2, "fuels": {"B"}},
+        {"id": 3, "fuels": {"B"}},
+    ],
+    "mixed": [
+        {"id": 0, "fuels": {"A", "B"}},
+        {"id": 1, "fuels": {"A", "B"}},
+        {"id": 2, "fuels": {"A"}},
+        {"id": 3, "fuels": {"B"}},
+    ],
+}
 
 config = {
     "simulation_duration": SIMULATION_DURATION,
@@ -31,7 +52,8 @@ config = {
     "normal_arrival_std": NORMAL_ARRIVAL_STD,
     "queue_max_size": QUEUE_MAX_SIZE,
     "dispenser_queue_max_size": DISPENSER_QUEUE_MAX_SIZE,
-    "dispensers_config": DISPENSERS_CONFIG,
+    # "dispensers_config": DISPENSERS_CONFIG,
+    "dispensers_config": SCENARIOS,
 }
 
 
@@ -166,9 +188,10 @@ def cars_waiting(queue: list[Car], dispensers: list[Dispenser]):
             car.wait()
 
 
-def run_simulation():
+# def run_simulation():
+def run_simulation(dispensers_config: list[dict]):
     current_time = 0
-    dispensers = [Dispenser(**config) for config in DISPENSERS_CONFIG]
+    dispensers = [Dispenser(**cfg) for cfg in dispensers_config]
     queue = []
     events = []
     simulation_states = []
@@ -333,15 +356,23 @@ def export_multiple_stats_to_csv(stats: list[dict], filename: str):
         file.write(csv_data)
 
 
-def run_multiple_simulations(n: int):
-    all_states = []
-    all_stats = []
+# def run_multiple_simulations(n: int):
+#     all_states = []
+#     all_stats = []
 
-    for i in range(n):
-        states, stats = run_simulation()
+#     for i in range(n):
+#         states, stats = run_simulation()
+#         all_states.append(states)
+#         all_stats.append(stats)
+
+#     return all_states, all_stats
+
+def run_multiple_simulations(n: int, dispensers_config: list[dict]):
+    all_states, all_stats = [], []
+    for _ in range(n):
+        states, stats = run_simulation(dispensers_config)
         all_states.append(states)
         all_stats.append(stats)
-
     return all_states, all_stats
 
 
